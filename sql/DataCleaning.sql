@@ -37,12 +37,12 @@ FROM layoffs_staging
 WHERE company = 'Casper';
 
 
--- Creating layoffs_staging2 table with additional column 'row_num'
-CREATE TABLE layoffs_staging2
+-- Creating cleaned_data table with additional column 'row_num'
+CREATE TABLE cleaned_data
 LIKE layoffs_staging;
 
 -- Inserting data with row numbers to detect duplicates
-INSERT INTO layoffs_staging2
+INSERT INTO cleaned_data
 SELECT *,
 ROW_NUMBER() OVER(
 PARTITION BY company, location, industry, total_laid_off,
@@ -52,55 +52,55 @@ FROM layoffs_staging;
 
 -- Deleting duplicates (rows where row_num > 1)
 DELETE
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE row_num > 1;
 
 -- Verifying the data after duplicates have been removed
 SELECT *
-FROM layoffs_staging2;
+FROM cleaned_data;
 
 
 -- Standardizing data
 
 -- Trimming spaces from the 'company' column
 SELECT company, TRIM(company)
-FROM layoffs_staging2;
+FROM cleaned_data;
 
 -- Update the 'company' column to remove leading/trailing spaces
-UPDATE layoffs_staging2
+UPDATE cleaned_data
 SET company = TRIM(company);
 
 -- Standardizing the 'industry' column to set all entries starting with 'Crypto' to 'Crypto'
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE industry LIKE 'Crypto%';
 
-UPDATE layoffs_staging2
+UPDATE cleaned_data
 SET industry = 'Crypto'
 WHERE industry LIKE 'Crypto%';
 
 -- Checking distinct values in 'location'
 SELECT DISTINCT(location)
-FROM layoffs_staging2
+FROM cleaned_data
 ORDER BY 1;
 
 -- Checking distinct values in 'country'
 SELECT DISTINCT(country)
-FROM layoffs_staging2
+FROM cleaned_data
 ORDER BY 1;
 
 -- Correcting 'country' values that contain trailing periods
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE country = 'United States.';
 
 -- Removing trailing periods from 'country'
 SELECT DISTINCT(country), TRIM(TRAILING '.' FROM country)
-FROM layoffs_staging2
+FROM cleaned_data
 ORDER BY 1;
 
 -- Update country field to remove trailing periods
-UPDATE layoffs_staging2
+UPDATE cleaned_data
 SET country = TRIM(TRAILING '.' FROM country)
 WHERE country LIKE 'United States%';
 
@@ -108,19 +108,19 @@ WHERE country LIKE 'United States%';
 -- Converting 'date' from string to DATE format
 SELECT `date`, 
 STR_TO_DATE(`date`, '%m/%d/%Y')
-FROM layoffs_staging2;
+FROM cleaned_data;
 
 -- Updating the 'date' field with the correct format and ensuring only valid dates are updated
-UPDATE layoffs_staging2
+UPDATE cleaned_data
 SET `date` = STR_TO_DATE(`date`, '%m/%d/%Y')
 WHERE STR_TO_DATE(`date`, '%m/%d/%Y') IS NOT NULL;
 
 -- Checking that 'date' conversion worked
 SELECT `date`
-FROM layoffs_staging2;
+FROM cleaned_data;
 
 -- Modifying 'date' column to ensure it's in DATE format
-ALTER TABLE layoffs_staging2
+ALTER TABLE cleaned_data
 MODIFY COLUMN `date` DATE;
 
 
@@ -128,37 +128,37 @@ MODIFY COLUMN `date` DATE;
 
 -- Checking for rows where both 'total_laid_off' and 'percentage_laid_off' are NULL
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE total_laid_off IS NULL
 AND percentage_laid_off IS NULL;
 
 -- Checking for rows where 'industry' is NULL or blank
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE industry IS NULL
 OR industry = '';
 
 -- Populating NULL values in 'industry' using data from the same company
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE company = 'Airbnb';
 
 -- Setting 'industry' to NULL where it's blank
-UPDATE layoffs_staging2
+UPDATE cleaned_data
 SET industry = NULL
 WHERE TRIM(industry) = '';  -- Fixing to handle blank or whitespace-only industries
 
 -- Cross-referencing industry values for NULL entries based on company
 SELECT t1.industry, t2.industry
-FROM layoffs_staging2 t1
-JOIN layoffs_staging2 t2
+FROM cleaned_data t1
+JOIN cleaned_data t2
     ON t1.company = t2.company
 WHERE t1.industry IS NULL
 AND t2.industry IS NOT NULL;
 
 -- Update industry where it's NULL based on matching company entries
-UPDATE layoffs_staging2 t1
-JOIN layoffs_staging2 t2
+UPDATE cleaned_data t1
+JOIN cleaned_data t2
     ON t1.company = t2.company
 SET t1.industry = t2.industry
 WHERE t1.industry IS NULL
@@ -166,27 +166,27 @@ AND t2.industry IS NOT NULL;
 
 -- Checking for any remaining NULL industries
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE industry IS NULL;
 
 
 -- Deleting rows where both 'total_laid_off' and 'percentage_laid_off' are NULL
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE total_laid_off IS NULL
 AND percentage_laid_off IS NULL;
 
 DELETE
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE total_laid_off IS NULL
 AND percentage_laid_off IS NULL;
 
 -- Removing the 'row_num' column after processing duplicates
-ALTER TABLE layoffs_staging2
+ALTER TABLE cleaned_data
 DROP COLUMN row_num;
 
 -- Final check of the table
 SELECT 
     *
 FROM
-    layoffs_staging2;
+    cleaned_data;

@@ -1,42 +1,42 @@
 -- Exploratory Data Analysis
 
 SELECT *
-FROM layoffs_staging2;
+FROM cleaned_data;
 
 SELECT MAX(total_laid_off), MAX(percentage_laid_off)
-FROM layoffs_staging2;
+FROM cleaned_data;
 
 SELECT *
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE percentage_laid_off = '1';
 
 SELECT company, SUM(total_laid_off) 
-FROM layoffs_staging2
+FROM cleaned_data
 GROUP BY company
 ORDER BY 2 DESC;
 
 SELECT industry, SUM(total_laid_off) 
-FROM layoffs_staging2
+FROM cleaned_data
 GROUP BY industry
 ORDER BY 2 DESC;
 
 SELECT country, SUM(total_laid_off) 
-FROM layoffs_staging2
+FROM cleaned_data
 GROUP BY country
 ORDER BY 2 DESC;
 
 SELECT YEAR(`date`), SUM(total_laid_off) 
-FROM layoffs_staging2
+FROM cleaned_data
 GROUP BY YEAR(`date`)
 ORDER BY 2 DESC;
 
 SELECT stage, SUM(total_laid_off) 
-FROM layoffs_staging2
+FROM cleaned_data
 GROUP BY stage
 ORDER BY 2 DESC;
 
 SELECT SUBSTRING(`date`, 1, 7) AS `MONTH`, SUM(total_laid_off)
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE SUBSTRING(`date`, 1, 7) IS NOT NULL
 GROUP BY `MONTH`
 ORDER BY 1 ASC;
@@ -44,7 +44,7 @@ ORDER BY 1 ASC;
 WITH Rolling_Total AS
 (
 SELECT SUBSTRING(`date`, 1, 7) AS `MONTH`, SUM(total_laid_off) AS total_off
-FROM layoffs_staging2
+FROM cleaned_data
 WHERE SUBSTRING(`date`, 1, 7) IS NOT NULL
 GROUP BY `MONTH`
 ORDER BY 1 ASC
@@ -55,7 +55,7 @@ FROM  Rolling_Total;
 WITH Company_Year (company, years, total_laid_off) AS
 (
 SELECT company, YEAR(`date`), SUM(total_laid_off)
-FROM layoffs_staging2
+FROM cleaned_data
 GROUP BY company, YEAR(`date`)
 ORDER BY company
 ), Company_Year_Rank AS 
